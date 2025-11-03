@@ -68,6 +68,7 @@ aws ec2 import-key-pair
 ## Step 4: Update `terraform.tfvars`
 Set your variables:
 
+bastion_allowed_ip = "your-IP/32"  # Your actual IP address - you can find out your IP simply by googling whatsmyIP - save it here
 key_name = "your-key-name" # e.g., test-key2
 certificate_arn = "<your-arn from above>"
 
