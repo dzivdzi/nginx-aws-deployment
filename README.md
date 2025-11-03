@@ -17,9 +17,10 @@ This guide helps you set up a secure NGINX deployment on AWS using Terraform and
 ## Step 1: Rename example tfvars file
 mv terraform.tfvars.example terraform.tfvars
 
-Update **only two lines** in `terraform.tfvars`:
+Update **only 3 lines** in `terraform.tfvars`:
 - `certificate_arn` – will be set after importing the cert.
 - `key_name` – will be set after generating/importing the SSH key.
+- `bastion_allowed_ip` - set your IP here so you can access the bastion host
 
 ---
 
@@ -50,7 +51,7 @@ certificate_arn = "arn:aws:acm:us-east-1:your_account_id:certificate/your_certif
 ## Step 3: Generate an SSH Key Pair
 Run:
 
-ssh-keygen -t rsa -b 2048 -f ~/.ssh/<your-key-name>
+ssh-keygen -t rsa -b 2048 -f ~/.ssh/your-key-name
 
 
 Replace `<your-key-name>` with a meaningful name, e.g., `test-key`.  
@@ -59,7 +60,7 @@ This generates `~/.ssh/<your-key-name>` (private) and `~/.ssh/<your-key-name>.pu
 ### Import your public key into AWS:
 aws ec2 import-key-pair
 --key-name <your-key-name>
---public-key-material fileb://~/.ssh/<your-key-name>.pub
+--public-key-material fileb://~/.ssh/your-key-name.pub
 --region us-east-1
 
 
@@ -68,7 +69,8 @@ aws ec2 import-key-pair
 ## Step 4: Update `terraform.tfvars`
 Set your variables:
 
-key_name = "<your-key-name>" # e.g., test-key2
+bastion_allowed_ip = "your-IP/32"  # Your actual IP address - you can find out your IP simply by googling whatsmyIP - save it here
+key_name = "your-key-name" # e.g., test-key2
 certificate_arn = "<your-arn from above>"
 
 
@@ -86,7 +88,7 @@ terraform apply
 ## Step 6: Transfer SSH Key to Bastion
 Copy your private SSH key to the bastion:
 
-scp -i ~/.ssh/<your-key-name> ~/.ssh/<your-key-name> ubuntu@<BASTION_IP>:~/.ssh/
+scp -i ~/.ssh/your-key-name ~/.ssh/your-key-name ubuntu@<BASTION_IP>:~/.ssh/
 
 
 On the bastion, set proper permissions:
@@ -98,19 +100,24 @@ chmod 600 ~/.ssh/<your-key-name>
 ---
 
 ## Step 7: Configure Ansible on Bastion
-Download your repo:
+Copy your ansible config to bastion:
 
-scp -i ~/.ssh/<your-key-name> -r ~/projects/nginx-aws-deployment/ansible ubuntu@<BASTION_IP>:~/
+scp -i ~/.ssh/<your-key-name> -r ~/projects/nginx-aws-deployment/ansible ubuntu@<BASTION_IP>:~/ (Note this path is an example)
 
 
 Login:
 ssh -i ~/.ssh/<your-key-name> ubuntu@<BASTION_IP>
 
 
-Check your SSH private key path in `inventory.ini`, e.g.:
+Please double check your SSH private key path in `inventory.ini` and also check the instances - they should be IP's, this below is how the .ini file looks like initially:
 
 [nginx]
-<instance_private_IP> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/<your-key-name>
+<instance_private_IP> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/your-key-name
+
+It should look like:
+EXAMPLE:
+
+10.10.10.10 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/your-key-name
 
 
 Run your playbook (make sure you are inside the ansible folder if you want to run it as below, otherwise you need to provide the full path):
