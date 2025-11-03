@@ -19,7 +19,7 @@ resource "aws_instance" "main" {
   instance_type         = var.instance_type
   subnet_id             = aws_subnet.private[count.index % 3].id
   vpc_security_group_ids = [aws_security_group.ec2.id]
-  key_name              = aws_key_pair.test_key.key_name
+  key_name              = var.key_name
   iam_instance_profile  = aws_iam_instance_profile.ec2_ssm_profile.name
 
   user_data = <<-EOF
@@ -50,7 +50,7 @@ resource "aws_launch_template" "main" {
   name_prefix   = "${var.project_name}-lt-"
   image_id = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
-  key_name      = aws_key_pair.test_key.key_name
+  key_name      = var.key_name
 
   user_data = base64encode(<<-EOF
               #!/bin/bash
