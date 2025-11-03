@@ -1,9 +1,14 @@
 aws_region      = "us-east-1"
 project_name    = "nginx-deployment"
 environment     = "production"
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_count  = 3
+private_subnet_count = 3
 instance_type   = "t3.small"
 min_instances   = 3
 max_instances   = 6
 certificate_arn = "your-acm-certificate-arn"
 key_name        = "your-key-name"
 bastion_allowed_ip = "your-ip/32"  # Your actual IP address
+alb_ingress_cidrs    = ["0.0.0.0/0"]
+ec2_ssh_ingress_cidr = "10.0.0.0/16"

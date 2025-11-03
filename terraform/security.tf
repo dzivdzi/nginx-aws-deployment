@@ -1,5 +1,5 @@
 resource "aws_security_group" "alb" {
-  name        = "${var.project_name}-alb-sg"
+  name        = format("%s-alb-sg", var.project_name)
   description = "ALB security group"
   vpc_id      = aws_vpc.main.id
 
@@ -7,14 +7,14 @@ resource "aws_security_group" "alb" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.alb_ingress_cidrs
   }
 
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.alb_ingress_cidrs
   }
 
   egress {
@@ -25,12 +25,12 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "${var.project_name}-alb-sg"
+    Name = format("%s-alb-sg", var.project_name)
   }
 }
 
 resource "aws_security_group" "ec2" {
-  name        = "${var.project_name}-ec2-sg"
+  name        = format("%s-ec2-sg", var.project_name)
   description = "EC2 security group"
   vpc_id      = aws_vpc.main.id
 
@@ -45,7 +45,7 @@ resource "aws_security_group" "ec2" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = [var.ec2_ssh_ingress_cidr]
   }
 
   egress {
@@ -56,19 +56,19 @@ resource "aws_security_group" "ec2" {
   }
 
   tags = {
-    Name = "${var.project_name}-ec2-sg"
+    Name = format("%s-ec2-sg", var.project_name)
   }
 }
 
 resource "aws_iam_role" "ec2_ssm_role" {
-  name = "${var.project_name}-ec2-ssm-role"
+  name = format("%s-ec2-ssm-role", var.project_name)
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
         Principal = {
           Service = "ec2.amazonaws.com"
         }
@@ -83,6 +83,6 @@ resource "aws_iam_role_policy_attachment" "ssm_policy" {
 }
 
 resource "aws_iam_instance_profile" "ec2_ssm_profile" {
-  name = "${var.project_name}-ec2-ssm-profile"
+  name = format("%s-ec2-ssm-profile", var.project_name)
   role = aws_iam_role.ec2_ssm_role.name
 }
