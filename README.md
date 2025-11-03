@@ -58,11 +58,7 @@ Replace `<your-key-name>` with a meaningful name, e.g., `test-key`.
 This generates `~/.ssh/<your-key-name>` (private) and `~/.ssh/<your-key-name>.pub` (public).
 
 ### Import your public key into AWS:
-aws ec2 import-key-pair
---key-name <your-key-name>
---public-key-material fileb://~/.ssh/your-key-name.pub
---region us-east-1
-
+aws ec2 import-key-pair --key-name your-key-name --public-key-material fileb://~/.ssh/your-key-name.pub --region us-east-1
 
 ---
 
