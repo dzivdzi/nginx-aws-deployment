@@ -50,7 +50,7 @@ certificate_arn = "arn:aws:acm:us-east-1:your_account_id:certificate/your_certif
 ## Step 3: Generate an SSH Key Pair
 Run:
 
-ssh-keygen -t rsa -b 2048 -f ~/.ssh/<your-key-name>
+ssh-keygen -t rsa -b 2048 -f ~/.ssh/your-key-name
 
 
 Replace `<your-key-name>` with a meaningful name, e.g., `test-key`.  
