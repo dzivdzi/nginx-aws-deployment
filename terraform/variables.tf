@@ -1,3 +1,5 @@
+# variables.tf
+
 variable "aws_region" {
   description = "AWS region"
   type        = string
@@ -42,4 +44,16 @@ variable "certificate_arn" {
 variable "key_name" {
   description = "EC2 key pair name"
   type        = string
+}
+
+variable "private_subnet_count" {
+  description = "Number of private subnets for instance distribution"
+  type        = number
+  default     = 3
+}
+
+variable "bastion_allowed_ip" {
+  description = "CIDR block allowed to SSH into bastion"
+  type        = string
+  default     = "0.0.0.0/0" # Change default to your IP or restrict as needed
 }

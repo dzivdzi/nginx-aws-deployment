@@ -1,3 +1,5 @@
+# compute.tf
+
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"]  # Canonical owner
@@ -14,13 +16,13 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_instance" "main" {
-  count                 = var.min_instances
-  ami = data.aws_ami.ubuntu.id
-  instance_type         = var.instance_type
-  subnet_id             = aws_subnet.private[count.index % 3].id
+  count                  = var.min_instances
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.private[count.index % var.private_subnet_count].id
   vpc_security_group_ids = [aws_security_group.ec2.id]
-  key_name              = var.key_name
-  iam_instance_profile  = aws_iam_instance_profile.ec2_ssm_profile.name
+  key_name               = var.key_name
+  iam_instance_profile   = aws_iam_instance_profile.ec2_ssm_profile.name
 
   user_data = <<-EOF
               #!/bin/bash
@@ -32,12 +34,11 @@ resource "aws_instance" "main" {
   monitoring = true
 
   tags = {
-    Name = "${var.project_name}-instance-${count.index + 1}"
+    Name = format("%s-instance-%d", var.project_name, count.index + 1)
   }
 
   depends_on = [aws_internet_gateway.main]
 }
-
 
 resource "aws_lb_target_group_attachment" "main" {
   count            = var.min_instances
@@ -47,10 +48,11 @@ resource "aws_lb_target_group_attachment" "main" {
 }
 
 resource "aws_launch_template" "main" {
-  name_prefix   = "${var.project_name}-lt-"
-  image_id = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
-  key_name      = var.key_name
+  name_prefix            = format("%s-lt-", var.project_name)
+  image_id               = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.ec2.id]
 
   user_data = base64encode(<<-EOF
               #!/bin/bash
@@ -59,8 +61,6 @@ resource "aws_launch_template" "main" {
               EOF
   )
 
-  vpc_security_group_ids = [aws_security_group.ec2.id]
-
   monitoring {
     enabled = true
   }
@@ -68,7 +68,7 @@ resource "aws_launch_template" "main" {
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = "${var.project_name}-asg-instance"
+      Name = format("%s-asg-instance", var.project_name)
     }
   }
 
@@ -77,13 +77,11 @@ resource "aws_launch_template" "main" {
   }
 }
 
-
-
 resource "aws_autoscaling_group" "main" {
-  name                    = "${var.project_name}-asg"
-  vpc_zone_identifier     = aws_subnet.private[*].id
-  target_group_arns       = [aws_lb_target_group.main.arn]
-  health_check_type       = "ELB"
+  name                      = format("%s-asg", var.project_name)
+  vpc_zone_identifier       = aws_subnet.private[*].id
+  target_group_arns         = [aws_lb_target_group.main.arn]
+  health_check_type         = "ELB"
   health_check_grace_period = 300
 
   min_size         = var.min_instances
@@ -97,7 +95,7 @@ resource "aws_autoscaling_group" "main" {
 
   tag {
     key                 = "Name"
-    value               = "${var.project_name}-asg-instance"
+    value               = format("%s-asg-instance", var.project_name)
     propagate_at_launch = true
   }
 
