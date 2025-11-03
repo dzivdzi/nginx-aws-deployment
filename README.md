@@ -68,7 +68,7 @@ aws ec2 import-key-pair
 ## Step 4: Update `terraform.tfvars`
 Set your variables:
 
-key_name = "<your-key-name>" # e.g., test-key2
+key_name = "your-key-name" # e.g., test-key2
 certificate_arn = "<your-arn from above>"
 
 
