@@ -1,0 +1,134 @@
+---
+- name: Configure NGINX on all instances
+  hosts: nginx
+  gather_facts: yes
+  become: yes
+
+  tasks:
+  - name: Update apt cache
+    apt:
+      update_cache: yes
+
+  - name: Install prerequisites
+    apt:
+      name:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg
+        - lsb-release
+      state: present
+
+  - name: Add Docker GPG key
+    shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+  - name: Add Docker repository
+    shell: echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+  - name: Update apt cache again
+    apt:
+      update_cache: yes
+
+  - name: Install Docker
+    apt:
+      name:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - python3-pip
+      state: present
+
+  - name: Start and enable Docker service
+    systemd:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: Add ubuntu to docker group
+    user:
+      name: ubuntu
+      groups: docker
+      append: yes
+
+  - name: Create directory for NGINX config
+    file:
+      path: /tmp/nginx
+      state: directory
+      mode: '0755'
+
+  - name: Create NGINX configuration file
+    copy:
+      content: |
+        user nginx;
+        worker_processes auto;
+        error_log /var/log/nginx/error.log warn;
+        pid /var/run/nginx.pid;
+
+        events {
+            worker_connections 1024;
+        }
+
+        http {
+            include /etc/nginx/mime.types;
+            default_type application/octet-stream;
+            log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                            '$status $body_bytes_sent "$http_referer" '
+                            '"$http_user_agent" "$http_x_forwarded_for"';
+            access_log /var/log/nginx/access.log main;
+            sendfile on;
+            tcp_nopush on;
+            tcp_nodelay on;
+            keepalive_timeout 65;
+            gzip on;
+
+            server {
+                listen 80;
+
+                location /phrase {
+                    access_log off;
+                    return 200 "OK\n";
+                    add_header Content-Type text/plain;
+                }
+
+                location / {
+                    return 200 "NGINX running\n";
+                    add_header Content-Type text/plain;
+                }
+            }
+        }
+      dest: /tmp/nginx/nginx.conf
+
+  - name: Pull NGINX Docker image
+    command: docker pull nginx:1.25-alpine
+
+  - name: Remove old NGINX container if exists
+    command: docker rm -f nginx
+    ignore_errors: yes
+
+  - name: Start NGINX Docker container
+    command: >
+      docker run -d
+      --name nginx
+      --restart always
+      -p 80:80
+      -v /tmp/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      nginx:1.25-alpine
+
+  - name: Wait for NGINX to start
+    pause:
+      seconds: 5
+
+  - name: Test NGINX health endpoint
+    uri:
+      url: http://localhost/phrase
+      method: GET
+      status_code: 200
+    register: result
+    retries: 3
+    delay: 5
+    until: result.status == 200
+
+  - name: Show configuration success message
+    debug:
+      msg: "✓ NGINX configured successfully on {{ inventory_hostname }}"
+
