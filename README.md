@@ -86,7 +86,7 @@ terraform apply
 ## Step 6: Transfer SSH Key to Bastion
 Copy your private SSH key to the bastion:
 
-scp -i ~/.ssh/<your-key-name> ~/.ssh/<your-key-name> ubuntu@<BASTION_IP>:~/.ssh/
+scp -i ~/.ssh/your-key-name ~/.ssh/your-key-name ubuntu@<BASTION_IP>:~/.ssh/
 
 
 On the bastion, set proper permissions:
@@ -98,19 +98,24 @@ chmod 600 ~/.ssh/<your-key-name>
 ---
 
 ## Step 7: Configure Ansible on Bastion
-Download your repo:
+Copy your ansible config to bastion:
 
-scp -i ~/.ssh/<your-key-name> -r ~/projects/nginx-aws-deployment/ansible ubuntu@<BASTION_IP>:~/
+scp -i ~/.ssh/<your-key-name> -r ~/projects/nginx-aws-deployment/ansible ubuntu@<BASTION_IP>:~/ (Note this path is an example)
 
 
 Login:
 ssh -i ~/.ssh/<your-key-name> ubuntu@<BASTION_IP>
 
 
-Check your SSH private key path in `inventory.ini`, e.g.:
+Please double check your SSH private key path in `inventory.ini` and also check the instances - they should be IP's, this below is how the .ini file looks like initially:
 
 [nginx]
-<instance_private_IP> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/<your-key-name>
+<instance_private_IP> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/your-key-name
+
+It should look like:
+EXAMPLE:
+
+10.10.10.10 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/your-key-name
 
 
 Run your playbook (make sure you are inside the ansible folder if you want to run it as below, otherwise you need to provide the full path):
