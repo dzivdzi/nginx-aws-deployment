@@ -17,7 +17,7 @@ This guide helps you set up a secure NGINX deployment on AWS using Terraform and
 ## Step 1: Rename example tfvars file
 mv terraform.tfvars.example terraform.tfvars
 
-Update **only 3 lines** in `terraform.tfvars`:
+**only 3 lines** are with mandatory updates in `terraform.tfvars`, rest of them have default values - feel free to modify w/e you'd like:
 - `certificate_arn` – will be set after importing the cert.
 - `key_name` – will be set after generating/importing the SSH key.
 - `bastion_allowed_ip` - set your IP here so you can access the bastion host
